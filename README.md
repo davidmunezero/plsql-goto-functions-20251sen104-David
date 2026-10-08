@@ -268,6 +268,7 @@ SELECT validate_payroll(1, NULL, 12) FROM dual;
 ```
 
 **Output**
+
 ![test functions output](./screenshots/B5_select_output.png)
 
 ## NOTES
