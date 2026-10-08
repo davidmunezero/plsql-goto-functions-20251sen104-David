@@ -66,7 +66,7 @@ END;
 
 ### 3. Illegal GOTO and Fix
 ```sql
--- illegal goto
+-- demonstrate illegal goto
 DECLARE
     num INTEGER := -1;
     is_negative EXCEPTION;
@@ -170,7 +170,7 @@ END;
 
 ### 3. Tax Calculator
 ```sql
--- assume tax is 18%
+-- calculate tax amount based on given salary and fixed tax_rate
 CREATE FUNCTION calculate_tax_amt(salary NUMBER) RETURN NUMBER AS
 tax_rate CONSTANT INTEGER DEFAULT 18;
 BEGIN
@@ -201,12 +201,74 @@ EXCEPTION
 END;
 /
 ```
+### 5. Validate Payroll
+```sql
+-- validate payroll for particular employee
 
-## Testing
+CREATE FUNCTION validate_payroll(i_emp_id INTEGER, amount NUMBER, bonus NUMBER) RETURN VARCHAR2 AS
+emp_salary NUMBER;
+BEGIN
+    -- get employee's salary
+    SELECT monthly_salary INTO emp_salary FROM employee WHERE emp_id = i_emp_id;
 
-### 1. Testing GOTO Statements 
+    -- validate payroll amount
+    IF amount IS NULL OR amount <= 0 OR emp_salary != amount THEN
+         RAISE_APPLICATION_ERROR(-20001, 'Error: Invalid payroll amount');
+    END IF;
 
-### 2. Testing Functions
+    -- validate bonus 0-15%
+    IF bonus < 0 OR bonus > 15 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Error: Invalid bonus');
+    END IF;
+
+    -- no errors, so payroll data is valid
+    RETURN 'Valid';
+    
+EXCEPTION 
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Invalid employee ID');
+        RETURN 'Invalid';
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE(SQLERRM);
+        RETURN 'Invalid';
+
+END;
+/
+```
+
+## Testing Functions
+```sql
+-- use select statements to test all functions
+
+-- correct usage
+SELECT get_annual_salary(1) FROM dual;
+SELECT get_years_of_service(2) FROM dual;
+SELECT calculate_tax_amt(10000) FROM dual;
+SELECT get_dept_name(3) FROM dual;
+SELECT validate_payroll(1, 1500000, 12) FROM dual;
+SELECT validate_payroll(4, 450000, 8) FROM dual;
+SELECT validate_payroll(1, 1500000, NULL) FROM dual;
+
+-- incorrect usage
+-- invalid emp_id returns NULL
+SELECT get_annual_salary(5) FROM dual;
+SELECT get_years_of_service(5) FROM dual;
+
+-- Negative salary
+SELECT calculate_tax_amt(-10000) FROM dual;
+
+-- invalid dept_id
+SELECT get_dept_name(4) FROM dual;
+SELECT get_dept_name(NULL) FROM dual;
+
+-- invalid payroll data
+SELECT validate_payroll(4, 1500000, 12) FROM dual;
+SELECT validate_payroll(1, 1500000, 16) FROM dual;
+SELECT validate_payroll(1, NULL, 12) FROM dual;
+```
+
+**Output**
+![test functions output](./screenshots/B5_select_output.png)
 
 ## NOTES
 I acknowledge using Claude AI to generate random employee table data.
